@@ -20,7 +20,7 @@
 %----------------------------------------------------------------------------------------
 
 \documentclass{article}
-
+\usepackage{enumerate}
 \usepackage{graphicx}
 \input{structure.tex} % Include the file specifying the document structure and custom commands
 
@@ -78,11 +78,57 @@ em uma máquina Linux, de forma que isso se torna fácil via ssh. A Figura \ref{
 
 \begin{figure}[h]
   \includegraphics[width=\linewidth]{img/machine_access.png}
-  \caption{Acesso aos nós via ssh..}
+  \caption{Acesso aos nós via ssh.}
   \label{fig:machine_access}
 \end{figure}
 
-
-
 \section{Deploy de Ambiente}
+
+Iniciando o deploy do ambiente, foram instalados os pacotes requisitados. A Figura \ref{fig:package_install} exibe a linha de comando executada
+para a instalação dos pacotes. Essa linha de comando foi executada em todos os nós (Master e 3 Slaves).
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/package_install.png}
+  \caption{Linha de comando executada para instalação de pacotes.}
+  \label{fig:package_install}
+\end{figure}
+
+Após esse processo, o Hadoop deve ser baixado e instalado nas máquinas. O comando exibido na Figura \ref{fig:hadoop_dl} foi executado em todos os nós da arquitetura.
+Com o sistema baixado e descompactado, o ambiente está ok para continuarmos.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/hadoop_download.png}
+  \caption{Download do Hadoop.}
+  \label{fig:hadoop_dl}
+\end{figure}
+
+\subsection{Executando o Spark no Ambiente}
+
+Após a configuração, está na hora de executarmos o Master. Para isso, antes é necessário setar algumas variáveis de ambiente:
+
+
+\begin{itemize}
+\item SPARK\_LOCAL\_IP: é o IP onde da máquina vinculada ao Spark;
+\item SPARK\_MASTER\_HOST: é o IP onde está rodando o nó Mestre.
+\end{itemize}
+
+Realizadas essas configurações, pode-se executar o Master com o script \emph{start-master.sh}. Ele gera um log ao executar, mostrado na Figura \ref{fig:spark_log}.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/spark_log.png}
+  \caption{Log do nó Master inicializado.}
+  \label{fig:spark_log}
+\end{figure}
+
+Agora, vamos inicializar as instâncias dos Slaves. Para isso, precisamos executar o script \emph{start-slave.sh}, parametrizando o endereço do Master com a porta.
+Realizado esse processo, o log do próprio Master acusa que os nós foram conectados, como mostra a Figura \ref{fig:env_ready}.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/environment_ready.png}
+  \caption{Mestre com os Slaves conectados.}
+  \label{fig:env_ready}
+\end{figure}
+
+\subsection{Executando o PySpark}
+
 \end{document}
