@@ -23,6 +23,7 @@
 \usepackage{enumerate}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{float}
 \input{structure.tex} % Include the file specifying the document structure and custom commands
 \usepackage{listings}
 
@@ -59,7 +60,7 @@ Nas próximas seções estão os passos para atingir tais objetivos.
 
 Para criação da infraestrutura, foi escolhida a AWS, pois foi o ambiente no qual o professor realizou o laboratório.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/machines_created.png}
   \caption{Máquinas criadas na \emph{cloud}.}
   \label{fig:fig_maq_criad}
@@ -69,7 +70,7 @@ A Figura \ref{fig:fig_maq_criad} mostra a infraestrutura de máquinas. Foram cri
 A parte de segurança da rede na própria AWS foi negligenciada, deixando todas as portas abertas. Abaixo, a Figura \ref{fig:machine_config} mostra parte da configuração das máquinas na AWS.
 
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/machine_config.png}
   \caption{Parte da configuração dos nós.}
   \label{fig:machine_config}
@@ -78,18 +79,19 @@ A parte de segurança da rede na própria AWS foi negligenciada, deixando todas 
 Antes de passarmos para a próxima Seção, precisamos conseguir acessar as máquinas criadas. O trabalho foi realizado
 em uma máquina Linux, de forma que isso se torna fácil via ssh. A Figura \ref{fig:machine_access} mostra o processo para acessar a máquina via terminal.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/machine_access.png}
   \caption{Acesso aos nós via ssh.}
   \label{fig:machine_access}
 \end{figure}
 
+\newpage
 \section{Deploy de Ambiente}
 
 Iniciando o deploy do ambiente, foram instalados os pacotes requisitados. A Figura \ref{fig:package_install} exibe a linha de comando executada
 para a instalação dos pacotes. Essa linha de comando foi executada em todos os nós (Master e 3 Slaves).
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/package_install.png}
   \caption{Linha de comando executada para instalação de pacotes.}
   \label{fig:package_install}
@@ -98,7 +100,7 @@ para a instalação dos pacotes. Essa linha de comando foi executada em todos os
 Após esse processo, o Hadoop deve ser baixado e instalado nas máquinas. O comando exibido na Figura \ref{fig:hadoop_dl} foi executado em todos os nós da arquitetura.
 Com o sistema baixado e descompactado, o ambiente está ok para continuarmos.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/hadoop_download.png}
   \caption{Download do Hadoop.}
   \label{fig:hadoop_dl}
@@ -133,15 +135,15 @@ Realizado esse processo, o log do próprio Master acusa que os nós foram conect
 
 \subsection{Fazendo o Deploy do Jupyter}
 
-Neste trabalho, decidi por utilizar Python e PySpark (já como uma preparação para o trabalho final). Para isso, inicialmente fiz o Deploy do Jupyter.
+Neste trabalho, decidi por utilizar Python e PySpark (já como uma preparação para o trabalho final). Para isso, realizei o Deploy do Jupyter.
 
-Inicialmente, baixei e instalei o \href{https://www.anaconda.com/download/#linux}{Anaconda} todavia, por algum motivo, o Python ainda era reconhecido como o que já vem instalado no sistema. Ao dar um reboot na máquina, ele reconheceu o certo (e posteriormente, achei uma forma mais simples de fazer, usando o comando \empth{source .bashrc} (o Anaconda faz mudanças no arquivo .bashrc).
+Inicialmente, baixei e instalei o \href{https://www.anaconda.com/download/#linux}{Anaconda} todavia, por algum motivo, o Python ainda era reconhecido como o que já vem instalado no sistema. Ao dar um reboot na máquina, ele reconheceu o certo (e posteriormente, achei uma forma mais simples de fazer, usando o comando \empth{source .bashrc}, pois o Anaconda faz mudanças no arquivo .bashrc).
 
 Feito isso, foram executados uma série de comandos e edição de arquivos de configuração para subir o Jupyter, eles podem ser visualizados \href{https://medium.com/@josemarcialportilla/getting-spark-python-and-jupyter-notebook-running-on-amazon-ec2-dec599e1c297}{neste link}. Acredito que fuja do escopo do trabalho detalhar essa parte, portanto fica o tutorial como registro.
 
 Após a realização das configurações (vale salientar que uma delas é configuração de senha, e que o setup dele na Amazon foi menos \emph{plug-and-play} do que setar localmente), foi possível acessar o Jupyter remotamente, conforme mostra a Figura \ref{fig:acess_jupyter}.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/jupyter_access.png}
   \caption{Acesso ao Jupyter Notebook.}
   \label{fig:acess_jupyter}
@@ -149,9 +151,9 @@ Após a realização das configurações (vale salientar que uma delas é config
 
 \subsection{Configurando o PySpark}
 
-Para rodar o Spark com Python, é necessário instalar a biblioteca Pyspark, além de declarar algumas variáveis de ambiente. Inicialmente, instalou-se o PySpark (Figura \ref{fig:pyspark_install}.
+Para rodar o Spark com Python, é necessário instalar a biblioteca Pyspark, além de declarar algumas variáveis de ambiente. Inicialmente, instalou-se o PySpark (Figura \ref{fig:pyspark_install}).
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/install_pyspark.png}
   \caption{Instalação do Pyspark.}
   \label{fig:pyspark_install}
@@ -168,12 +170,10 @@ Após realizar essa instalação, as seguintes variáveis de ambiente foram conf
 Agora, partimos para a parte de carregar os dados e analisá-los.
 
 
-
+\newpage
 \section{Análise de dados}
 
-Decidiu-se por fazer uma análise superficial, tendo em vista que o escopo do trabalho era mais focado em montar o ambiente. Para isso, utilizou-se o arquivo de acidentes de 2016, disponibilizado pelo professor.
-
-Para começar, criamos uma SparkSession e lemos o dataframe do arquivo, conforme mostrado abaixo.
+Decidiu-se por fazer uma análise superficial, tendo em vista que o escopo do trabalho era mais focado em montar o ambiente. Para isso, utilizou-se o arquivo de acidentes de 2016, disponibilizado pelo professor. Para começar, criamos uma SparkSession e lemos o dataframe do arquivo, conforme mostrado abaixo.
 
 \begin{lstlisting}[language=Python]
 spark = SparkSession.builder \
@@ -194,8 +194,9 @@ df = sqlContext.read.option("delimiter", ';')
 
 Com isso, conseguimos carregar os dados na conexão, abaixo uma parte da descrição do esquema desses dados (Figura \ref{fig:df_description}).
 
-\begin{figure}[h]
-  \includegraphics[width=\linewidth]{img/df_description.png}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5 \linewidth]{img/df_description.png}
   \caption{Descrição dos dados.}
   \label{fig:df_description}
 \end{figure}
@@ -206,26 +207,28 @@ Após, utilizamos o código abaixo para criar uma tabela dentro do framework. Ag
 df.createOrReplaceTempView("table_acidentes")
 \end{lstlisting}
 
-Consultando uma informação simples nos dados, identificamos que há 47 mortos no ano (Figura \ref{fig:df_dead_no}). A primeira análise é analisar a distribuição de mortes por dia da semana.
+Consultando uma informação simples nos dados, identificamos que há 47 mortos no ano (Figura \ref{fig:df_dead_no}). Na primeira análise, irei verificar a distribuição de mortes por dia da semana.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \includegraphics[width=\linewidth]{img/df_numberofdead.png}
   \caption{Consulta simples na tabela criada.}
   \label{fig:df_dead_no}
 \end{figure}
 
-Para manipular os dados localmente (no \emph{frontend} Python, utilizei o pacote Pandas. Além dele, utilizei o Seaborn e o Matplotlib para plotar os dados. Fazendo a consulta agrupando pelo campo \textbf{DIA\_SEM}, e plotando os dados, o gráfico gerado pode ser visualizado na Figura \ref{fig:df_dead_by_week}. O dia em que mais houve mortes foi sábado, o que faz sentido tendo em vista que é final de semana. Todavia, esse não parece um resultado convincente, portanto, vamos analisar a distribuição de todos os acidentes.
+Para manipular os dados localmente (no \emph{frontend} Python), utilizei o pacote Pandas. Além dele, utilizei o Seaborn e o Matplotlib para plotar os dados. Fazendo a consulta agrupando pelo campo \textbf{DIA\_SEM}, e plotando os dados, o gráfico gerado pode ser visualizado na Figura \ref{fig:df_dead_by_week}. O dia em que mais houve mortes foi sábado, o que faz sentido tendo em vista que é final de semana. Todavia, esse não parece um resultado convincente, portanto, vamos analisar a distribuição de todos os acidentes.
 
-\begin{figure}[h]
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{img/dead_by_week.png}
-  \caption{Plot de dados agrupados por dia.}
+  \caption{Plot de mortes, agrupado por dia da semana.}
   \label{fig:df_dead_by_week}
 \end{figure}
 
 
 Conforme a Figura \ref{fig:acid_by_weekday} mostra, o número de acidentes cai no Sábado e Domingo. Isso pode indicar que, apesar de ter menos acidentes no final de semana, eles acabam sendo mais fatais.
 
-\begin{figure}[h]
+\begin{figure}[H]
+  \centering
   \includegraphics[width=\linewidth]{img/acid_by_weekday.png}
   \caption{Acidentes por dia de semana.}
   \label{fig:acid_by_weekday}
@@ -233,8 +236,9 @@ Conforme a Figura \ref{fig:acid_by_weekday} mostra, o número de acidentes cai n
 
 Feito isso, decidi por analisar os tipos mais frequentes de acidentes. Para isso, outra consulta foi realizada, o resultado está ilustrado na Figura \ref{fig:df_acid_type}. A distribuição de acidentes faz sentido, tendo em vista que é comum ver uma Colisão ou um Abalroamento (tipo de batida também), e os menos comuns são aqueles que dificilmente vemos, como Capotagem e Incêndio.
 
-\begin{figure}[h]
-  \includegraphics[width=\linewidth]{img/tipo_acid.png.png}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{img/tipo_acid.png}
   \caption{Plot de acidentes por tipo.}
   \label{fig:df_acid_type}
 \end{figure}
