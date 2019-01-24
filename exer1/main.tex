@@ -24,6 +24,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \input{structure.tex} % Include the file specifying the document structure and custom commands
+\usepackage{listings}
 
 %----------------------------------------------------------------------------------------
 %	ASSIGNMENT INFORMATION
@@ -165,5 +166,83 @@ Após realizar essa instalação, as seguintes variáveis de ambiente foram conf
 \end{itemize}
 
 Agora, partimos para a parte de carregar os dados e analisá-los.
+
+
+
+\section{Análise de dados}
+
+Decidiu-se por fazer uma análise superficial, tendo em vista que o escopo do trabalho era mais focado em montar o ambiente. Para isso, utilizou-se o arquivo de acidentes de 2016, disponibilizado pelo professor.
+
+Para começar, criamos uma SparkSession e lemos o dataframe do arquivo, conforme mostrado abaixo.
+
+\begin{lstlisting}[language=Python]
+spark = SparkSession.builder \
+   .master("local") \
+   .appName("EBD13-EXER") \
+   .config("spark.executor.memory", "800mb") \
+   .getOrCreate()
+   
+sc = spark.sparkContext
+sqlContext = SQLContext(sc)
+
+df = sqlContext.read.option("delimiter", ';')
+.load('file:///home/admin/Notebooks/acidentes-2016.csv', 
+                      format='com.databricks.spark.csv', 
+                      header='true', 
+                      inferSchema='true')
+\end{lstlisting}
+
+Com isso, conseguimos carregar os dados na conexão, abaixo uma parte da descrição do esquema desses dados (Figura \ref{fig:df_description}).
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/df_description.png}
+  \caption{Descrição dos dados.}
+  \label{fig:df_description}
+\end{figure}
+
+Após, utilizamos o código abaixo para criar uma tabela dentro do framework. Agora podemos utilizar SQL para consultá-la (via Spark).
+
+\begin{lstlisting}[language=Python]
+df.createOrReplaceTempView("table_acidentes")
+\end{lstlisting}
+
+Consultando uma informação simples nos dados, identificamos que há 47 mortos no ano (Figura \ref{fig:df_dead_no}). A primeira análise é analisar a distribuição de mortes por dia da semana.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/df_numberofdead.png}
+  \caption{Consulta simples na tabela criada.}
+  \label{fig:df_dead_no}
+\end{figure}
+
+Para manipular os dados localmente (no \emph{frontend} Python, utilizei o pacote Pandas. Além dele, utilizei o Seaborn e o Matplotlib para plotar os dados. Fazendo a consulta agrupando pelo campo \textbf{DIA\_SEM}, e plotando os dados, o gráfico gerado pode ser visualizado na Figura \ref{fig:df_dead_by_week}. O dia em que mais houve mortes foi sábado, o que faz sentido tendo em vista que é final de semana. Todavia, esse não parece um resultado convincente, portanto, vamos analisar a distribuição de todos os acidentes.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/dead_by_week.png}
+  \caption{Plot de dados agrupados por dia.}
+  \label{fig:df_dead_by_week}
+\end{figure}
+
+
+Conforme a Figura \ref{fig:acid_by_weekday} mostra, o número de acidentes cai no Sábado e Domingo. Isso pode indicar que, apesar de ter menos acidentes no final de semana, eles acabam sendo mais fatais.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/acid_by_weekday.png}
+  \caption{Acidentes por dia de semana.}
+  \label{fig:acid_by_weekday}
+\end{figure}
+
+Feito isso, decidi por analisar os tipos mais frequentes de acidentes. Para isso, outra consulta foi realizada, o resultado está ilustrado na Figura \ref{fig:df_acid_type}. A distribuição de acidentes faz sentido, tendo em vista que é comum ver uma Colisão ou um Abalroamento (tipo de batida também), e os menos comuns são aqueles que dificilmente vemos, como Capotagem e Incêndio.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/tipo_acid.png.png}
+  \caption{Plot de acidentes por tipo.}
+  \label{fig:df_acid_type}
+\end{figure}
+
+\section{Considerações Finais}
+
+O trabalho foi muito interessante, fazia algum tempo que eu não montava um ambiente distribuído a mão. Houveram algumas dificuldades, principalmente pois nunca tinha feito o Deploy do Jupyter para utilizar remoto e nem utilizado o PySpark. Todavia, após superar essas dificuldades pontuais, tudo correu bem.
+
+Tendo em vista que o objetivo do trabalho era mais para criar e utilizar o ambiente, decidi por fazer uma análise de dados bem superficial, apenas para ilustrar o uso do ambiente. Facilmente poderia aprofundar essas análises, contudo, acho mais interessante fazer análises mais rebuscadas no trabalho final da disciplina.
 
 \end{document}
