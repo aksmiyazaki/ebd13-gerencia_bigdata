@@ -22,6 +22,7 @@
 \documentclass{article}
 \usepackage{enumerate}
 \usepackage{graphicx}
+\usepackage{hyperref}
 \input{structure.tex} % Include the file specifying the document structure and custom commands
 
 %----------------------------------------------------------------------------------------
@@ -129,6 +130,40 @@ Realizado esse processo, o log do próprio Master acusa que os nós foram conect
   \label{fig:env_ready}
 \end{figure}
 
-\subsection{Executando o PySpark}
+\subsection{Fazendo o Deploy do Jupyter}
+
+Neste trabalho, decidi por utilizar Python e PySpark (já como uma preparação para o trabalho final). Para isso, inicialmente fiz o Deploy do Jupyter.
+
+Inicialmente, baixei e instalei o \href{https://www.anaconda.com/download/#linux}{Anaconda} todavia, por algum motivo, o Python ainda era reconhecido como o que já vem instalado no sistema. Ao dar um reboot na máquina, ele reconheceu o certo (e posteriormente, achei uma forma mais simples de fazer, usando o comando \empth{source .bashrc} (o Anaconda faz mudanças no arquivo .bashrc).
+
+Feito isso, foram executados uma série de comandos e edição de arquivos de configuração para subir o Jupyter, eles podem ser visualizados \href{https://medium.com/@josemarcialportilla/getting-spark-python-and-jupyter-notebook-running-on-amazon-ec2-dec599e1c297}{neste link}. Acredito que fuja do escopo do trabalho detalhar essa parte, portanto fica o tutorial como registro.
+
+Após a realização das configurações (vale salientar que uma delas é configuração de senha, e que o setup dele na Amazon foi menos \emph{plug-and-play} do que setar localmente), foi possível acessar o Jupyter remotamente, conforme mostra a Figura \ref{fig:acess_jupyter}.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/jupyter_access.png}
+  \caption{Acesso ao Jupyter Notebook.}
+  \label{fig:acess_jupyter}
+\end{figure}
+
+\subsection{Configurando o PySpark}
+
+Para rodar o Spark com Python, é necessário instalar a biblioteca Pyspark, além de declarar algumas variáveis de ambiente. Inicialmente, instalou-se o PySpark (Figura \ref{fig:pyspark_install}.
+
+\begin{figure}[h]
+  \includegraphics[width=\linewidth]{img/install_pyspark.png}
+  \caption{Instalação do Pyspark.}
+  \label{fig:pyspark_install}
+\end{figure}
+
+Após realizar essa instalação, as seguintes variáveis de ambiente foram configuradas:
+
+\begin{itemize}
+    \item export SPARK\_HOME='/home/admin/spark-2.1.0-bin-hadoop2.7'
+    \item export PATH=\$SPARK\_HOME:\$PATH
+    \item export PYTHONPATH=\$SPARK\_HOME/python:\$PYTHONPATH
+\end{itemize}
+
+Agora, partimos para a parte de carregar os dados e analisá-los.
 
 \end{document}
