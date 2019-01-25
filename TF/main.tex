@@ -43,6 +43,130 @@
 
 \maketitle % Print the title
 
+\section{Introdução}
+O objetivo do trabalho é analisar o Dataset do ENEM, assim como foi realizado o trabalho de EBD09. Todavia, agora usaremos Python e PySpark, fazendo o deploy de todo o ambiente na Google Cloud.
+
+O objetivo é analisar o Dataset, além de comparar as facilidades e dificuldades de utilizar Python e R. Além disso, se houver tempo hábil, irei realizar também uma análise de desempenho simplificada, para determinar um mínimo local de arquitetura (número de workers) para executar as análises.
+
+
+\subsection{Objetivo atingidos no Trabaho}
+
+\subsection{Organização do Texto}
+
+\newpage
+\section{Dados}
+
+Os dados utilizados foram os mesmos do trabalho de EBD09. Não irei entrar em detalhes de quantas \emph{features} existem nele, vamos fazer uma avaliação a medida que formos avançando na avaliação exploratória. Algumas características dos dados podem ser observadas na Tabela \ref{tab:data_data}.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Tamanho & Formato & Número de Features &  Número de Observações \\ \hline \hline
+5.554 MB & CSV & 166 & 8.627.367 \\ \hline
+\end{tabular}
+\caption{Descrição dos Dados.}
+\label{tab:data_data}
+\end{table}
+
+Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho completo do arquivo foi obtido navegando pelo sistema, conforme mostra a Figura \ref{fig:data_on_hdfs}.
+
+\begin{figure}[H]
+  \includegraphics[width=\linewidth]{img/file_hdfs.png}
+  \caption{Arquivos no HDFS.}
+  \label{fig:data_on_hdfs}
+\end{figure}
+
+\newpage
+\section{Infraestrutura e Deploy de Ambiente}
+
+Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} do Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial de todo o ambiente. A configuração dessas máquinas não necessariamente é importante pois só iremos setar o ambiente e testá-lo.
+
+\subsection{Avaliação de Arquitetura Ideal}
+
+Antes de começar a efetivamente fazer a análise, decidi por avaliar algumas opções de arquitetura e ver qual seria o melhor custo benefício. As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Mestre e os slaves sempre têm a mesma configuração.
+
+A avaliação foi realizada inicialmente, apenas carregando os dados, com o trecho de código abaixo. Para cada execução, foi reiniciado o Kernel Python.
+
+\begin{lstlisting}[language=python]
+start = time.time()
+
+df = sqlContext.read.option("delimiter", ';')
+.load('hdfs:///user/aksmiyazaki/enem_2016.csv', 
+                      format='com.databricks.spark.csv', 
+                      header='true', 
+                      inferSchema='true')
+
+end = time.time()
+t = end - start
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Identificador & Número de Slaves & vCPUs &  Memória & Disco \\ \hline
+1 &2 & 2 & 7,5 GB & 200GB HD \\ \hline
+ & &  & & \\ \hline
+ & &  & & \\ \hline
+\end{tabular}
+\caption{Descrição de Arquiteturas testadas.}
+\label{tab:arqs}
+\end{table}
+
+
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (média) \\ \hline
+1 & 184.787441730499 &  \\ \hline
+ &  &  \\ \hline
+ &  &  \\ \hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Deploy de Aplicações}
+
+
+
+\section*{Apêndice}
+
+\subsection{Execução de consultas por Arquitetura}
+
+É importante notar que os identificadores citados nas Tabelas \ref{tab:times_load} e \ref{tab:query} se referem àqueles citados na Tabela \ref{tab:arqs}. A abordagem de avaliação foi bem simplificada, tendo em vista que fazer uma real análise de desempenho não faz parte do escopo do trabalho.
+
+
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Identificador da Arquitetura & T1 & T2 & T3\\ \hline
+1 &  187.68613958358765 & 178.42478108406067 & 188.2514045238495\\ \hline
+ &  & & \\ \hline
+ &  & & \\ \hline
+\end{tabular}
+\caption{Tempos de Carga.}
+\label{tab:times}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Identificador da Arquitetura & T1 & T2 & T3\\ \hline
+1 & 63.009117603302 & & \\ \hline
+ &  & & \\ \hline
+ &  & & \\ \hline
+\end{tabular}
+\caption{Tempos de Consulta}
+\label{tab:query}
+\end{table}
+
+
 
 \end{document}
 
