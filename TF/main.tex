@@ -20,6 +20,7 @@
 %----------------------------------------------------------------------------------------
 
 \documentclass{article}
+\usepackage[portuguese]{babel}
 \usepackage{enumerate}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -49,7 +50,7 @@ O objetivo do trabalho é analisar o Dataset do ENEM, assim como foi realizado o
 O objetivo é analisar o Dataset, além de comparar as facilidades e dificuldades de utilizar Python e R. Além disso, se houver tempo hábil, irei realizar também uma análise de desempenho simplificada, para determinar um mínimo local de arquitetura (número de workers) para executar as análises.
 
 
-\subsection{Objetivo atingidos no Trabaho}
+\subsection{Objetivo do Trabaho}
 
 \subsection{Organização do Texto}
 
@@ -73,7 +74,7 @@ Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho c
 
 \begin{figure}[H]
   \includegraphics[width=\linewidth]{img/file_hdfs.png}
-  \caption{Arquivos no HDFS.}
+  \caption{Arquivos no HDFS, identificado como \emph{enem\_2016.csv}.}
   \label{fig:data_on_hdfs}
 \end{figure}
 
@@ -82,13 +83,25 @@ Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho c
 
 Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} do Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial de todo o ambiente. A configuração dessas máquinas não necessariamente é importante pois só iremos setar o ambiente e testá-lo.
 
+\subsection{Deploy de Aplicações}
+
+A \emph{Google Cloud Dataproc} faz com que o ambiente precise de quase nenhuma modificação. O único processo que precisa ser realizado além de lançar o Cluster no Console é colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
+
+Com isso, o ambiente montado já vem com Hadoop, Spark, PySpark, Jupyter e Anaconda. O último vem com um problema de configuração que não permite que sejam instalados novos pacotes. Isso foi resolvido executando o comando abaixo. Após esse comando, foi possível instalar pacotes normalmente (embora eu tenha dúvidas se essa é a melhor abordagem para a solução.
+
+\begin{lstlisting}[caption= {Solução de problema de Permissão.},captionpos=b]
+sudo chown -R $USER /opt/conda
+\end{lstlisting}
+
 \subsection{Avaliação de Arquitetura Ideal}
 
 Antes de começar a efetivamente fazer a análise, decidi por avaliar algumas opções de arquitetura e ver qual seria o melhor custo benefício. As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Mestre e os slaves sempre têm a mesma configuração.
 
+Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguimos montar um cluster com no máximo 10 vCPUs e com no máximo 100GB (somatório total) de SSD.
+
 A avaliação foi realizada inicialmente, apenas carregando os dados, com o trecho de código abaixo. Para cada execução, foi reiniciado o Kernel Python.
 
-\begin{lstlisting}[language=python]
+\begin{lstlisting}[caption= {Carga de dados no Spark},captionpos=b, language=python]
 start = time.time()
 
 df = sqlContext.read.option("delimiter", ';')
@@ -101,68 +114,111 @@ end = time.time()
 t = end - start
 \end{lstlisting}
 
+
 \begin{table}[H]
 \centering
 \begin{tabular}{|c|c|c|c|c|}
 \hline
-Identificador & Número de Slaves & vCPUs &  Memória & Disco \\ \hline
-1 &2 & 2 & 7,5 GB & 200GB HD \\ \hline
- & &  & & \\ \hline
- & &  & & \\ \hline
+Identificador & Número de Slaves & vCPUs &  Memória & Disco \\ \hline \hline
+1 & 2 & 2 & 7,5 GB & 200GB HD \\ \hline
+2 & 2 & 2 & 7.5 GB & 30GB SSD \\ \hline
+3 & 3 & 2 & 7.5 GB & 20GB SSD\\ \hline
 \end{tabular}
 \caption{Descrição de Arquiteturas testadas.}
 \label{tab:arqs}
 \end{table}
 
+Após a carga, foi criada uma \emph{lazily evaluated view} (trecho de código abaixo). Essa tabela pode ser consultada com SparkSQL. 
 
+\begin{lstlisting}[caption= {Criação da Tabela para Consulta},captionpos=b, language=python]
+df.createOrReplaceTempView("table_enem2016")
+\end{lstlisting}
+
+Com a tabela criada, consultamos os dados conforme código abaixo. É importante salientar que nesse ponto o Kernel não é mais reinicializado.
+
+\begin{lstlisting}[caption= {Consulta Simplificada para Avaliação},captionpos=b, language=python]
+start = time.time()
+
+df2 = spark.sql("Select mean(NU_NOTA_CN) from table_enem2016")
+df2.collect()
+
+end = time.time()
+\end{lstlisting}
+
+Os resultados da avaliação (média de tempos) podem ser visualizados na Tabela \ref{tab:mean_times}. Para maiores detalhes, consulte a Seção \ref{sect:eval_data}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{|l|l|l|}
+\begin{tabular}{|c|c|c|}
 \hline
-Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (média) \\ \hline
-1 & 184.787441730499 &  \\ \hline
- &  &  \\ \hline
- &  &  \\ \hline
+Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (média) \\ \hline 
+\hline
+1 & 184.79 &  57.83
+\\ \hline
+2 & 172.98 & 49.72
+ \\ \hline
+3 & 124.81
+ &  40.24
+ \\ \hline
 \end{tabular}
+\caption{Tempos médios de execução, em \textbf{segundos}.}
+\label{tab:mean_times}
 \end{table}
 
+Com base na análise desses tempos, segui utilizando a configuração número 3. Isso porque, ela foi a que apresentou melhores resultados em termos de desempenho, e pode nos dar maior agilidade na avaliação exploratória desses dados. É importante salientar que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
 
-\subsection{Deploy de Aplicações}
+\newpage
+\section{Análise Exploratória dos Dados}
 
+A análise dos dados tem como principal objetivo identificar \emph{Features} que tenham relação com as notas dos candidatos. Para isso, irei realizando inferências a medida que a análise avançar, exibindo os resultados obtidos.
 
+A primeira intuição é avaliar se as regiões do País afetam as médias dos candidatos. Para isso, executou-se uma consulta , que calculava tambéma média total, gerando o gráfico da Figura \ref{fig:avg_uf}.
 
+\begin{figure}[H]
+  \includegraphics[width=\linewidth]{img/mean_by_uf.png}
+  \caption{Médias por UF.}
+  \label{fig:fig_maq_criad}
+\end{figure}
+
+\newpage
 \section*{Apêndice}
-
-\subsection{Execução de consultas por Arquitetura}
+\label{sect:eval_data}
+\subsection*{Execução de consultas por Arquitetura}
 
 É importante notar que os identificadores citados nas Tabelas \ref{tab:times_load} e \ref{tab:query} se referem àqueles citados na Tabela \ref{tab:arqs}. A abordagem de avaliação foi bem simplificada, tendo em vista que fazer uma real análise de desempenho não faz parte do escopo do trabalho.
 
-
-
 \begin{table}[H]
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-Identificador da Arquitetura & T1 & T2 & T3\\ \hline
+Identificador da Arquitetura & T1 & T2 & T3\\ \hline 
+\hline
 1 &  187.68613958358765 & 178.42478108406067 & 188.2514045238495\\ \hline
- &  & & \\ \hline
- &  & & \\ \hline
+2 & 172.11613035202026 & 172.5200114250183 & 174.2983114719391 \\ \hline
+3 & 127.42551612854
+ & 121.673460960388
+& 125.33324432373
+\\ \hline
 \end{tabular}
-\caption{Tempos de Carga.}
-\label{tab:times}
+\caption{Tempos de Carga, em \textbf{segundos}.}
+\label{tab:times_load}
 \end{table}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-Identificador da Arquitetura & T1 & T2 & T3\\ \hline
-1 & 63.009117603302 & & \\ \hline
- &  & & \\ \hline
- &  & & \\ \hline
+Identificador da Arquitetura & T1 & T2 & T3\\ \hline 
+\hline
+1 & 63.009117603302 & 61.09515404701233 & 49.37240242958069\\ \hline
+2 & 58.08870315551758 & 46.74635648727417 & 44.3299551010132
+\\ \hline
+3 & 43.8593015670776
+ & 44.337733745575
+& 32.537876367569
+\\ \hline
 \end{tabular}
-\caption{Tempos de Consulta}
+\caption{Tempos de Consulta, em \textbf{segundos}.}
 \label{tab:query}
 \end{table}
 
