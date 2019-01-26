@@ -53,8 +53,11 @@ gcloud compute ssh "cluster-tf-m" \
 
 -? Added aksmiyazaki to sudoers
 - sudo chown -R $USER /opt/conda
-- conda install pyspark
+- conda install pandas
 - conda install seaborn
+
+master 2 vcpu, 50 disco ssd
+slaves 6 com 1vcpuj, 100gb disco padrão
 
 
 - 1 master com 2vCPU, 7,5GB de Memória e 200GB de disco, 2 workers com mesma config.
