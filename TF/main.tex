@@ -95,9 +95,9 @@ sudo chown -R $USER /opt/conda
 
 \subsection{Avaliação de Arquitetura Ideal}
 
-Antes de começar a efetivamente fazer a análise, decidi por avaliar algumas opções de arquitetura e ver qual seria a melhor opção (visto que, no momento, não estou preocupado com custo, apenas com desempenho). As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Mestre e os slaves sempre têm a mesma configuração.
+Antes de começar a efetivamente fazer a análise dos dados, decidi por avaliar algumas opções de arquitetura e ver qual seria a melhor opção (visto que, no momento, não estou preocupado com custo, apenas com desempenho). As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Master, cuja configuração é sempre igual a dos Slaves (a salvo na configuração 4, onde ele possui 2vCPU, 7.5GB de memória e 50 GB SSD).
 
-Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguimos montar um cluster com no máximo 10 vCPUs e com no máximo 100GB (somatório total) de SSD.
+Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguimos montar um cluster com no máximo 8 vCPUs e com no máximo 100GB (somatório total) de SSD. Portanto, analisei o que era possível ser criado.
 
 A avaliação foi realizada inicialmente, apenas carregando os dados, com o trecho de código abaixo. Para cada execução, foi reiniciado o Kernel Python.
 
@@ -120,9 +120,10 @@ t = end - start
 \begin{tabular}{|c|c|c|c|c|}
 \hline
 Identificador & Número de Slaves & vCPUs &  Memória & Disco \\ \hline \hline
-1 & 2 & 2 & 7,5 GB & 200GB HD \\ \hline
+1 & 2 & 2 & 7,5 GB & 200GB HD  \\ \hline
 2 & 2 & 2 & 7.5 GB & 30GB SSD \\ \hline
-3 & 3 & 2 & 7.5 GB & 20GB SSD\\ \hline
+3 & 3 & 2 & 7.5 GB & 20GB SSD  slaves. \\ \hline
+4 & 6 & 1 (VCPUj) & 3.75 GB & 100GB HD   \\ \hline
 \end{tabular}
 \caption{Descrição de Arquiteturas testadas.}
 \label{tab:arqs}
@@ -134,7 +135,7 @@ Após a carga, foi criada uma \emph{lazily evaluated view} (trecho de código ab
 df.createOrReplaceTempView("table_enem2016")
 \end{lstlisting}
 
-Com a tabela criada, consultamos os dados conforme código abaixo. Essa consulta foi usada pois é necessário passar por todo o volume de dados para calcular a média de uma coluna (pelo menos por toda a coluna). Como os dados são distribuídos, acredito que mesmo sendo uma consulta simples, é uma forma adequada de fazer a avaliação. É importante salientar que nesse ponto o Kernel não é mais reinicializado.
+Com a tabela criada, os dados foram consultados utilizando o código abaixo. Essa consulta foi usada pois é necessário passar por todo o volume de dados para calcular a média de uma coluna (pelo menos por toda a coluna). Como os dados são distribuídos, mesmo sendo uma consulta simples, é uma forma adequada de fazer a avaliação. É importante salientar que nesse ponto o Kernel não é mais reinicializado.
 
 \begin{lstlisting}[caption= {Consulta Simplificada para Avaliação},captionpos=b, language=python]
 start = time.time()
@@ -160,21 +161,40 @@ Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (mé
 3 & 124.81
  &  40.24
  \\ \hline
+4 & 100.57
+ &  27.92
+ \\ \hline
 \end{tabular}
 \caption{Tempos médios de execução, em \textbf{segundos}.}
 \label{tab:mean_times}
 \end{table}
 
-Com base na análise desses tempos, segui utilizando a configuração número 3. Isso porque, ela foi a que apresentou melhores resultados em termos de desempenho, e pode nos dar maior agilidade na avaliação exploratória desses dados. É importante salientar que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
+Algumas considerações sobre a análise:
 
-A Figura \ref{fig:hdfs_data} mostra as estatísticas do master e de um dos datanodes (slaves).
+\begin{itemize}
+    \item Esperava que a configuração 2 tivesse um ganho bem maior em relação a 1, pois estamos usando SSD. Não cheguei a aprofundar a análise do motivo desse comportamento;
+    \item A configuração 4 foi aquela que performou melhor. Mesmo a configuração anterior sendo equivalente em número de cores e armazenamento em SSD, muito provavelmente o gargalo é leitura de disco e nesse caso, tendo os dados distribuídos em mais workers acabou sendo mais impactante;
+    \item Possívelmente haveriam outras configurações melhores, se não tivéssemos limites de alocação.
+\end{itemize}
 
+Portanto, a arquitetura de número 4 é a mais performática em termos de processamento e é a que iremos utilizar no trabalho. Ela não é tão adequada para o processamento de grandes volumes de dados (em uma consulta simples, levando em torno de 27 segundos), mas é a melhor que conseguimos montar no ambiente disponibilizado. É importante salientar também que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
+
+A Figura \ref{fig:hdfs_data} mostra as estatísticas do master e de um dos datanodes (slaves) após a carga de dados. Pode-se notar que a arquitetura utilizada possui 6 slaves pela linha que reporta o número de Live datanodes.
 
 \begin{figure}[H]
 \centering
-  \includegraphics[width=0.8 \linewidth]{img/hdfs-occupation.png}
+  \includegraphics[width=0.6 \linewidth]{img/hdfs-occupation.png}
   \caption{Estatísticas do HDFS.}
   \label{fig:hdfs_data}
+\end{figure}
+
+Para ficar mais claro a arquitetura utilizada a Figura \ref{fig:arch} mostra sua representação. É importante notar que o Master possui configuração diferente dos Slaves.
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=0.6 \linewidth]{img/arch.png}
+  \caption{Arquitetura utilizada no trabalho.}
+  \label{fig:arch}
 \end{figure}
 
 \newpage
@@ -230,6 +250,10 @@ Identificador da Arquitetura & T1 & T2 & T3\\ \hline
  & 121.673460960388
 & 125.33324432373
 \\ \hline
+4 & 106.646942853928
+ & 97.2526772022247
+& 97.7907633781433
+\\ \hline
 \end{tabular}
 \caption{Tempos de Carga, em \textbf{segundos}.}
 \label{tab:times_load}
@@ -247,6 +271,10 @@ Identificador da Arquitetura & T1 & T2 & T3\\ \hline
 3 & 43.8593015670776
  & 44.337733745575
 & 32.537876367569
+\\ \hline
+4 & 34.5449047088623
+ & 24.7415041923523
+& 24.4780607223511
 \\ \hline
 \end{tabular}
 \caption{Tempos de Consulta, em \textbf{segundos}.}
