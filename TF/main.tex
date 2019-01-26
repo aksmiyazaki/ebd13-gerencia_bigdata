@@ -83,11 +83,11 @@ Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho c
 
 Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} do Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial de todo o ambiente. A configuração dessas máquinas não necessariamente é importante pois só iremos setar o ambiente e testá-lo.
 
-\subsection{Deploy de Aplicações}
+\subsection{Deploy de Ambiente}
 
-A \emph{Google Cloud Dataproc} faz com que o ambiente precise de quase nenhuma modificação. O único processo que precisa ser realizado além de lançar o Cluster no Console é colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
+Para fazer a avaliação da arquitetura, foram realizados testes de deploy do ambiente (nunca havia feito a implantação do ambiente com Jupyter na \emph{Google Cloud}).Felizmente a implantação das aplicações necessárias precisa apenas de uma ação: colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
 
-Com isso, o ambiente montado já vem com Hadoop, Spark, PySpark, Jupyter e Anaconda. O último vem com um problema de configuração que não permite que sejam instalados novos pacotes. Isso foi resolvido executando o comando abaixo. Após esse comando, foi possível instalar pacotes normalmente (embora eu tenha dúvidas se essa é a melhor abordagem para a solução.
+Com isso, o ambiente montado já vem com Hadoop, Spark, PySpark, Jupyter e Anaconda, todos configurados. O último vem com um problema de configuração que não permite que sejam instalados novos pacotes. Isso foi resolvido executando o comando abaixo. Após esse comando, foi possível instalar pacotes normalmente (embora eu tenha dúvidas se essa é a melhor abordagem para a solução).
 
 \begin{lstlisting}[caption= {Solução de problema de Permissão.},captionpos=b]
 sudo chown -R $USER /opt/conda
@@ -95,7 +95,7 @@ sudo chown -R $USER /opt/conda
 
 \subsection{Avaliação de Arquitetura Ideal}
 
-Antes de começar a efetivamente fazer a análise, decidi por avaliar algumas opções de arquitetura e ver qual seria o melhor custo benefício. As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Mestre e os slaves sempre têm a mesma configuração.
+Antes de começar a efetivamente fazer a análise, decidi por avaliar algumas opções de arquitetura e ver qual seria a melhor opção (visto que, no momento, não estou preocupado com custo, apenas com desempenho). As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Mestre e os slaves sempre têm a mesma configuração.
 
 Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguimos montar um cluster com no máximo 10 vCPUs e com no máximo 100GB (somatório total) de SSD.
 
@@ -134,13 +134,13 @@ Após a carga, foi criada uma \emph{lazily evaluated view} (trecho de código ab
 df.createOrReplaceTempView("table_enem2016")
 \end{lstlisting}
 
-Com a tabela criada, consultamos os dados conforme código abaixo. É importante salientar que nesse ponto o Kernel não é mais reinicializado.
+Com a tabela criada, consultamos os dados conforme código abaixo. Essa consulta foi usada pois é necessário passar por todo o volume de dados para calcular a média de uma coluna (pelo menos por toda a coluna). Como os dados são distribuídos, acredito que mesmo sendo uma consulta simples, é uma forma adequada de fazer a avaliação. É importante salientar que nesse ponto o Kernel não é mais reinicializado.
 
 \begin{lstlisting}[caption= {Consulta Simplificada para Avaliação},captionpos=b, language=python]
 start = time.time()
 
 df2 = spark.sql("Select mean(NU_NOTA_CN) from table_enem2016")
-df2.collect()
+df2.collect()\
 
 end = time.time()
 \end{lstlisting}
@@ -167,6 +167,16 @@ Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (mé
 
 Com base na análise desses tempos, segui utilizando a configuração número 3. Isso porque, ela foi a que apresentou melhores resultados em termos de desempenho, e pode nos dar maior agilidade na avaliação exploratória desses dados. É importante salientar que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
 
+A Figura \ref{fig:hdfs_data} mostra as estatísticas do master e de um dos datanodes (slaves).
+
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=0.8 \linewidth]{img/hdfs-occupation.png}
+  \caption{Estatísticas do HDFS.}
+  \label{fig:hdfs_data}
+\end{figure}
+
 \newpage
 \section{Análise Exploratória dos Dados}
 
@@ -186,15 +196,17 @@ A primeira intuição é avaliar se as regiões do País afetam as médias dos c
 Fazendo uma análise da idade relacionada a média total, podemos ver uma tendencia decrescente nos dados a medida que a idade aumenta, na Figura \ref{fig:mean_by_age}. 
 
 \begin{figure}[H]
-  \includegraphics[width=\linewidth]{img/mean_by_age.png}
+\centering
+  \includegraphics[width=0.8 \linewidth]{img/mean_by_age.png}
   \caption{Médias por Idade.}
   \label{fig:mean_by_age}
 \end{figure}
 
-Também foi realizada uma análise, verificando a renda familiar (informada na Feature Q006). A renda é representada por letras, onde A indica sem renda e Q indica mais de R\$ 17.600,00 (ordem crescente). Na Figura \ref{fig:mean_by_wage}
+Também foi realizada uma análise, verificando a renda familiar (informada na Feature Q006). A renda é representada por letras, onde A indica sem renda e Q indica mais de R\$ 17.600,00 (ordem crescente). Na Figura \ref{fig:mean_by_wage} é visível a tendência crescente da média total a medida que a renda aumenta. É possível ver grandes discrepâncias nas notas de Redação e Matemática. Com isso, concluí-se que essa é uma Feature que também tem relação com a performance dos candidatos.
 
 \begin{figure}[H]
-  \includegraphics[width=\linewidth]{img/mean_by_wage.png}
+\centering
+  \includegraphics[width=0.8 \linewidth]{img/mean_by_wage.png}
   \caption{Médias por Faixa de Renda.}
   \label{fig:mean_by_wage}
 \end{figure}
