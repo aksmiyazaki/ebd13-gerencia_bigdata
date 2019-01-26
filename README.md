@@ -27,6 +27,8 @@ http://inep.gov.br/microdados
 https://cloud.google.com/dataproc/docs/tutorials/jupyter-notebook?hl=pt-br
 2
 
+
+wget http://download.inep.gov.br/microdados/microdados_enem2016.zip
 Jupyter
 - add gs://dataproc-initialization-actions/jupyter/jupyter.sh as initialization action
 - create ssh conn
@@ -35,7 +37,7 @@ Jupyter
   --zone=cluster-zone \
   -- -D 10000 -N
 
-gcloud compute ssh "cluster-68b6-m" \
+gcloud compute ssh "cluster-tf-m" \
   --project neon-idiom-212518 \
   --zone=southamerica-east1-c \
   -- -D 10000 -N
