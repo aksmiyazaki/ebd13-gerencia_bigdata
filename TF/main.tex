@@ -192,7 +192,7 @@ Para ficar mais claro a arquitetura utilizada a Figura \ref{fig:arch} mostra sua
 
 \begin{figure}[H]
 \centering
-  \includegraphics[width=0.6 \linewidth]{img/arch.png}
+  \includegraphics[width=0.8 \linewidth]{img/arch.png}
   \caption{Arquitetura utilizada no trabalho.}
   \label{fig:arch}
 \end{figure}
@@ -211,9 +211,9 @@ A primeira intuição é avaliar se as regiões do País afetam as médias dos c
   \label{fig:fig_maq_criad}
 \end{figure}
 
-É visível a discrepância de notas da parte sudeste do país com o restante. Portanto, concluí-se que essa é uma \ref{Feature} bem significativa para inferir a nota do candidato.
+É visível a discrepância de notas da parte sudeste do país com o restante. Portanto, concluí-se que essa é uma \emph{Feature} bem significativa para inferir a nota do candidato.
 
-Fazendo uma análise da idade relacionada a média total, podemos ver uma tendencia decrescente nos dados a medida que a idade aumenta, na Figura \ref{fig:mean_by_age}. 
+Fazendo uma análise da idade relacionada a média total, podemos ver uma tendência decrescente nos dados a medida que a idade aumenta, na Figura \ref{fig:mean_by_age}. 
 
 \begin{figure}[H]
 \centering
@@ -229,6 +229,24 @@ Também foi realizada uma análise, verificando a renda familiar (informada na F
   \includegraphics[width=0.8 \linewidth]{img/mean_by_wage.png}
   \caption{Médias por Faixa de Renda.}
   \label{fig:mean_by_wage}
+\end{figure}
+
+Também foi realizada uma análise por sexo, cujo resultado pode ser visualizado na Figura \ref{tab:mean_by_sex}. Notar que a diferença no Score total não foi significativa.
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=0.8 \linewidth]{img/mean_by_sex.png}
+  \caption{Médias por Sexo.}
+  \label{fig:mean_by_sex}
+\end{figure}
+
+Analisando o estado civil dos candidatos, a Figura \ref{fig:mean_by_civil} mostra os resultados. Há uma clara relação deles com o score total (solteiros tiram notas maiores que os demais estados). É importante salientar que esses resultados podem estar correlacionados com Idade.
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=0.8 \linewidth]{img/mean_by_civil.png}
+  \caption{Médias por Estado Civil.}
+  \label{fig:mean_by_sex}
 \end{figure}
 
 \newpage
