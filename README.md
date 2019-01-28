@@ -37,6 +37,9 @@ Jupyter
   --zone=cluster-zone \
   -- -D 10000 -N
 
+win -
+gcloud compute ssh "cluster-tf-m" --project neon-idiom-212518 --zone=southamerica-east1-c -- -D 10000 -N
+
 gcloud compute ssh "cluster-tf-m" \
   --project neon-idiom-212518 \
   --zone=southamerica-east1-c \
@@ -50,6 +53,8 @@ gcloud compute ssh "cluster-tf-m" \
     --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost" \
     --user-data-dir=/tmp/
 
+win - 
+C:\Program Files\Google\Chrome\Application\chrome.exe "http://cluster-tf-m:8123" --proxy-server="socks5://localhost:10000" --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost" --user-data-dir=/tmp/
 
 -? Added aksmiyazaki to sudoers
 - sudo chown -R $USER /opt/conda
