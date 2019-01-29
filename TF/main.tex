@@ -45,22 +45,32 @@
 \maketitle % Print the title
 
 \section{Introdução e Objetivos}
-Devido ao escopo flexível do trabalho, ele será executado em Python, na \emph{Google Cloud}. O trabalho de EBD09 foi executado em R neste mesmo ambiente, e o Exercício 1 de EBD13 foi executado na \emph{Amazon} em Python, portanto, ao final desse trabalho será possível fazer uma comparação entre deploy do ambiente Python nessas Clouds, além de destacar pontos positivos e negativos das linguagens citadas trabalhando com o Spark.
+Devido ao escopo flexível do trabalho, ele será executado em Python, na \emph{Google Cloud}. O trabalho de EBD09 foi executado em R neste mesmo ambiente, e o Exercício 1 de EBD13 foi executado na \emph{Amazon} em Python, portanto, ao final desse trabalho será possível fazer uma comparação entre \emph{deploy} do ambiente Python nessas Clouds, além de destacar pontos positivos e negativos das linguagens citadas trabalhando com o Spark.
 
 O principal objetivo do trabalho é chegar no mesmo ponto do trabalho de EBD09, ou seja, realizar algumas análises exploratórias plotando gráficos. Se for possível, é desejado chegar até a geração de um modelo, mesmo que pouco performático, de \emph{Machine Learning}.
 
-Além disso, antes de começar, será realizada uma análise simplificada de arquiteturas para definirmos a melhor a ser utilizada. Essa análise visa a escolha do melhor ambiente disponível para que o trabalho seja realizado.
+Além disso, antes de começar, será realizada uma avaliação simplificada de arquiteturas para definirmos a melhor a ser utilizada. Ela visa a escolha do melhor ambiente disponível para que o trabalho seja realizado.
+
+Neste trabalho, os seguintes objetivos foram atingidos:
+
+\begin{itemize}
+    \item Realização do \emph{Deploy} de um ambiente com Python, Spark, Hadoop, PySpark na \emph{Google Cloud};
+    \item Realização de análises exploratórias do \emph{dataset};
+    \item Treinamento de um modelo de regressão, utilizando o Spark (mesmo performando mal, o processo foi realizado);
+    \item Enumeração de possíveis pontos de melhoria a serem realizados no modelo de Machine Learning;
+    \item Comparação entre utilização de ambientes \emph{Amazon} e \emph{Google};
+    \item Comparação de utilização do Spark utilizando linguagens Python e R (o R foi utilizado no trabalho de EBD09).
+\end{itemize}
 
 \subsection{Organização do Texto}
 O texto das próximas seções está organizado da seguinte forma:
 
 \begin{itemize}
     \item A Seção \ref{sect:data} disserta sobre os dados utilizados;
-    \item A Seção \ref{sect:infra} fala sobre a Infraestrutura e Deploy de ambiente;
+    \item A Seção \ref{sect:infra} fala sobre a Infraestrutura e \emph{deploy} de ambiente;
     \item A Seção \ref{sect:expl_anal} faz a análise dos dados;
     \item A Seção \ref{sect:critic_anal} faz uma análise crítica e comparações de ferramentas e linguagens;
-    \item A Seção \ref{sect:end} conclui o trabalho;
-    \item A Seção \ref{sect:eval_data} possui informações complementares.
+    \item A Seção \ref{sect:end} conclui o trabalho.
 \end{itemize}
 
 \newpage
@@ -89,14 +99,14 @@ Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho c
 \end{figure}
 
 \newpage
-\section{Infraestrutura e Deploy de Ambiente}
+\section{Infraestrutura e \emph{deploy} de Ambiente}
 \label{sect:infra}
 
-Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} da Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial. A configuração dessas máquinas não necessariamente é importante pois só iremos setar e testar o ambiente.
+Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} da \emph{Google Cloud}. Inicialmente, criou-se um cluster com 1 \emph{Master} e 2 \emph{Slaves} apenas para a realização de um \emph{deploy} inicial. A configuração dessas máquinas não necessariamente é importante pois só iremos setar e testar o ambiente.
 
-\subsection{Deploy de Ambiente}
+\subsection{\emph{Deploy} de Ambiente}
 
-Para fazer a avaliação da arquitetura, foram realizados testes de deploy do ambiente (era necessário conhecer como ele era realizado para replicar nas análises de infraestrutura). Felizmente a implantação das aplicações necessárias precisa apenas de uma ação: colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
+Para fazer a avaliação da arquitetura, foram realizados testes de \emph{deploy} do ambiente (era necessário conhecer como ele era realizado para replicar nas análises de infraestrutura). Felizmente a implantação das aplicações necessárias precisa apenas de uma ação: colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
 
 Com isso, o ambiente montado já vem com Hadoop, Spark, PySpark, Jupyter e Anaconda, todos configurados. O último vem com um problema de configuração que não permite que sejam instalados novos pacotes. Isso foi resolvido executando o comando abaixo. Após esse comando, foi possível instalar pacotes normalmente (embora eu tenha dúvidas se essa é a melhor abordagem para a solução).
 
@@ -106,9 +116,9 @@ sudo chown -R $USER /opt/conda
 
 \subsection{Avaliação de Arquitetura Ideal}
 
-Antes de começar a efetivamente fazer a análise dos dados, decidi por avaliar algumas opções de arquitetura e ver qual seria a melhor opção (visto que, no momento, não estou preocupado com custo, apenas com desempenho). As arquiteturas testadas podem ser visualizadas na tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó Master, cuja configuração é sempre igual a dos Slaves (a salvo na configuração 4, onde ele possui 2vCPU, 7.5GB de memória e 50 GB SSD).
+Antes de começar a efetivamente fazer a análise dos dados, decidiu-se por avaliar algumas opções de arquitetura e ver qual seria a melhor opção (visto que, no momento, não há preocupações com custo, apenas com desempenho). As arquiteturas testadas podem ser visualizadas na Tabela \ref{tab:arqs}. Importante salientar que todas as arquiteturas possuem apenas um nó \emph{Master}, cuja configuração é sempre igual a dos \emph{Slaves} (a salvo na configuração 4, onde ele possui 2vCPU, 7.5GB de memória e 50 GB SSD).
 
-Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguimos montar um cluster com no máximo 8 vCPUs e com no máximo 100GB (somatório total) de SSD. Portanto, analisei o que era possível ser criado.
+Houveram problemas de alocação de arquitetura, pois há restrições no plano free da \emph{Google Cloud}. Conseguiu-se montar um cluster com no máximo 8 vCPUs e com no máximo 100GB (somatório total) de SSD. Portanto, foi analisado o que era possível ser criado.
 
 A avaliação foi realizada inicialmente, apenas carregando os dados, com o trecho de código abaixo. Para cada execução, foi reiniciado o Kernel Python.
 
@@ -130,10 +140,10 @@ t = end - start
 \centering
 \begin{tabular}{|c|c|c|c|c|}
 \hline
-Identificador & Número de Slaves & vCPUs &  Memória & Disco \\ \hline \hline
+Identificador & Número de \emph{Slaves} & vCPUs &  Memória & Disco \\ \hline \hline
 1 & 2 & 2 & 7,5 GB & 200GB HD  \\ \hline
 2 & 2 & 2 & 7.5 GB & 30GB SSD \\ \hline
-3 & 3 & 2 & 7.5 GB & 20GB SSD  slaves. \\ \hline
+3 & 3 & 2 & 7.5 GB & 20GB SSD \\ \hline
 4 & 6 & 1 (VCPUj) & 3.75 GB & 100GB HD   \\ \hline
 \end{tabular}
 \caption{Descrição de Arquiteturas testadas.}
@@ -183,14 +193,14 @@ Configuração & Carga de Dados (média) &  Execução de  Consulta Simples (mé
 Algumas considerações sobre a análise:
 
 \begin{itemize}
-    \item Esperava que a configuração 2 tivesse um ganho bem maior em relação a 1, pois estamos usando SSD. Não cheguei a aprofundar a análise do motivo desse comportamento;
-    \item A configuração 4 foi aquela que performou melhor. Mesmo a configuração anterior sendo equivalente em número de cores e armazenamento em SSD, muito provavelmente o gargalo é leitura de disco e nesse caso, tendo os dados distribuídos em mais workers acabou sendo mais impactante;
-    \item Possívelmente haveriam outras configurações melhores, se não tivéssemos limites de alocação.
+    \item Era esperado que a configuração 2 tivesse um ganho bem maior em relação a 1, pois ela utiliza SSD. A análise do motivo desse comportamento não foi investigada;
+    \item A configuração 4 foi aquela que performou melhor. Mesmo a anterior sendo equivalente em número de cores e com armazenamento em SSD, muito provavelmente o gargalo é leitura de disco e nesse caso, tendo os dados distribuídos em mais workers acabou sendo mais impactante;
+    \item Possívelmente haveriam outras configurações melhores, se não houvesse limite de alocação.
 \end{itemize}
 
-Portanto, a arquitetura de número 4 é a mais performática em termos de processamento e é a que iremos utilizar no trabalho. Ela não é tão adequada para o processamento de grandes volumes de dados (em uma consulta simples, levando em torno de 27 segundos), mas é a melhor que conseguimos montar no ambiente disponibilizado. É importante salientar também que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
+Portanto, a arquitetura de número 4 é a mais performática em termos de processamento e é a que será utilizada no trabalho. Ela não é tão adequada para o processamento de grandes volumes de dados (em uma consulta simples, levando em torno de 27 segundos), mas é a melhor disponível. É importante salientar que essa configuração pode não ser o melhor custo benefício (isso precisaria ser levado em consideração no mundo real).
 
-A Figura \ref{fig:hdfs_data} mostra as estatísticas do master e de um dos datanodes (slaves) após a carga de dados. Pode-se notar que a arquitetura utilizada possui 6 slaves pela linha que reporta o número de Live datanodes.
+A Figura \ref{fig:hdfs_data} mostra as estatísticas do \emph{Master} e de um dos datanodes (\emph{Slaves}) após a carga de dados. Pode-se notar que a arquitetura utilizada possui 6 \emph{Slaves} pela linha que reporta o número de Live datanodes.
 
 \begin{figure}[H]
 \centering
@@ -199,7 +209,7 @@ A Figura \ref{fig:hdfs_data} mostra as estatísticas do master e de um dos datan
   \label{fig:hdfs_data}
 \end{figure}
 
-Para ficar mais claro a arquitetura utilizada a Figura \ref{fig:arch} mostra sua representação. É importante notar que o Master possui configuração diferente dos Slaves.
+Para ficar mais claro a arquitetura utilizada a Figura \ref{fig:arch} mostra sua representação. É importante notar que o \emph{Master} possui configuração diferente dos \emph{Slaves}.
 
 \begin{figure}[H]
 \centering
@@ -220,12 +230,12 @@ A primeira intuição é avaliar se as regiões do País afetam as médias dos c
 \centering
   \includegraphics[width= 0.8 \linewidth]{img/mean_by_uf.png}
   \caption{Médias por UF.}
-  \label{fig:fig_maq_criad}
+  \label{fig:avg_uf}
 \end{figure}
 
 É visível a discrepância de notas da parte sudeste do país com o restante. Portanto, concluí-se que essa é uma \emph{Feature} bem significativa para inferir a nota do candidato.
 
-Fazendo uma análise da idade relacionada a média total, podemos ver uma tendência decrescente nos dados a medida que a idade aumenta, na Figura \ref{fig:mean_by_age}. Analisando a correlação de Idade com a média total, temos um valor de -0.52, o que indica uma correlação negativa razoável (a medida que aumenta a idade, a média cai, o que confirma a análise visual).
+Fazendo uma análise da idade do candidato, relacionada a média total, podemos ver uma tendência decrescente nos dados a medida que a idade aumenta, na Figura \ref{fig:mean_by_age}. Analisando a correlação de Idade com a média total, temos um valor de -0.52, o que indica uma correlação negativa razoável (a medida que aumenta a idade, a média cai, o que confirma a percepção visual).
 
 \begin{figure}[H]
 \centering
@@ -234,7 +244,7 @@ Fazendo uma análise da idade relacionada a média total, podemos ver uma tendê
   \label{fig:mean_by_age}
 \end{figure}
 
-Também foi realizada uma análise, verificando a renda familiar (informada na Feature Q006). A renda é representada por letras, onde A indica sem renda e Q indica mais de R\$ 17.600,00 (ordem crescente). Na Figura \ref{fig:mean_by_wage} é visível a tendência crescente da média total a medida que a renda aumenta. É possível ver grandes discrepâncias nas notas de Redação e Matemática. Com isso, concluí-se que essa é uma Feature que também tem relação com a performance dos candidatos.
+Também verificou-se a renda familiar (informada na Feature Q006). A renda é representada por letras, onde A indica sem renda e Q indica mais de R\$ 17.600,00 (ordem crescente). Na Figura \ref{fig:mean_by_wage} é visível a tendência crescente da média total a medida que a renda aumenta. É possível ver grandes discrepâncias nas notas de Redação e Matemática. Com isso, concluí-se que essa é uma Feature que também tem relação com a performance dos candidatos.
 
 \begin{figure}[H]
 \centering
@@ -243,7 +253,7 @@ Também foi realizada uma análise, verificando a renda familiar (informada na F
   \label{fig:mean_by_wage}
 \end{figure}
 
-Também foi realizada uma análise por sexo, cujo resultado pode ser visualizado na Figura \ref{tab:mean_by_sex}. Notar que a diferença no Score total não foi significativa.
+Também analisou-se a relação do Sexo dos candidatos com a nota, cujo resultado pode ser visualizado na Figura \ref{fig:mean_by_sex}. Notar que a diferença no Score total não foi significativa.
 
 \begin{figure}[H]
 \centering
@@ -252,16 +262,16 @@ Também foi realizada uma análise por sexo, cujo resultado pode ser visualizado
   \label{fig:mean_by_sex}
 \end{figure}
 
-Analisando o estado civil dos candidatos, a Figura \ref{fig:mean_by_civil} mostra os resultados. Há uma clara relação deles com o score total (solteiros tiram notas maiores que os demais estados). É importante salientar que esses resultados podem estar correlacionados com Idade.
+Analisando o estado civil dos candidatos, a Figura \ref{fig:mean_by_civil} mostra os resultados. Há leve relação deles com o score total (solteiros tiram notas levemente maiores que os demais). É importante salientar que esses resultados podem estar correlacionados com Idade.
 
 \begin{figure}[H]
 \centering
   \includegraphics[width=0.8 \linewidth]{img/mean_by_civil.png}
   \caption{Médias por Estado Civil.}
-  \label{fig:mean_by_sex}
+  \label{fig:mean_by_civil}
 \end{figure}
 
-Ao analisar mais um campo, o de Raça, identificamos que há dois valores que não agregam tanta informação assim (Não Declarado e Não consta Informação). Há em torno de 165.000 registros com essas informações, todavia, nosso dataset possui mais de 8 milhões. Portanto, decidiu-se por avaliar assim mesmo, o resultado pode ser visualizado na Figura \ref{fig:mean_by_raca}. É possível notar que pessoas Brancas têm uma média superior as demais raças e, portanto, iremos considerar esse campo.
+Ao verificar a relação de raça declarada com a nota dos candidatos, identificamos que há dois valores que não agregam tanta informação assim (Não Declarado e Não consta Informação). Há em torno de 165.000 registros com essas informações, todavia, nosso dataset possui mais de 8 milhões. Portanto, decidiu-se por avaliar assim mesmo, o resultado pode ser visualizado na Figura \ref{fig:mean_by_raca}. É possível notar que pessoas Brancas têm uma média superior as demais raças e, portanto, esse campo será considerado.
 
 \begin{figure}[H]
 \centering
@@ -273,9 +283,9 @@ Ao analisar mais um campo, o de Raça, identificamos que há dois valores que n�
 
 \subsection{Modelo de Regressão}
 
-Com algumas Features selecionadas, foi decidido por tentar realizar o treinamento de um modelo de \emph{Machine Learning} para tentar prever as notas de novos candidatos. Para isso, foi selecionado o modelo mais simples de regressão (Linear), utilizando o LinearRegression do PySpark.
+Com algumas Features selecionadas, decidiu-se por tentar realizar o treinamento de um modelo de \emph{Machine Learning} para tentar prever as notas de novos candidatos. Para isso, foi selecionado o modelo mais simples de regressão (Linear), utilizando o LinearRegression do PySpark.
 
-Há algumas particularidades do PySpark, relacionando-o com as bibliotecas geralmente utilizadas para machine learning em Python, por exemplo, o fato de todas as features precisarem estar em apenas uma coluna e não trabalhar valores String. Por isso, foi necessário uma série de transformações nos dados antes de começar a treinar o modelo.
+Há algumas particularidades do PySpark, relacionando-o com as bibliotecas geralmente utilizadas para \emph{Machine Learning} em Python, por exemplo, o fato de todas as Features precisarem estar em apenas uma coluna e não trabalhar valores String. Por isso, foi necessário uma série de transformações nos dados antes de começar a treinar o modelo.
 
 Inicialmente, transformou-se os dados representados em strings para vetores de inteiros, com o código abaixo.
 Isso foi executado no campo \emph{UF} e no campo \emph{Renda}.
@@ -314,14 +324,14 @@ Teste & R Squared & 0.21 \\ \hline
 \label{tab:model_traign}
 \end{table}
 
-O modelo nitidamente não está bom, o valor de R Squared em 0.21 indica que o modelo consegue prever apenas 21\% da variabilidade em \emph{Score} pode ser explicada usando o modelo. Para melhorar isso, pode-se realizar diversas ações:
+O modelo nitidamente não está bom, o valor de R Squared em 0.21 indica que apenas 21\% da variabilidade em \emph{Score} pode ser explicada usando o modelo. Para melhorar isso, pode-se realizar diversas ações:
 
 \begin{itemize}
     \item Aumentar o conjunto de features;
     \item Mudar o formato de representação de features para se adequarem melhor aos modelos de ML;
     \item Mudar o algoritmo de ML;
     \item Tunar parâmetros do algoritmo de ML;
-    \item Realizar uma análise de correlação das features, utilizando um conjunto com base não só na análise visual.
+    \item Realizar uma avaliação de correlação das features, utilizando um conjunto com base não só na análise visual.
 \end{itemize}
 
 De qualquer forma, a experiência adquirida ao treinar um modelo de forma distribuída com o PySpark foi ótima. Optou-se por não realizar a otimização do modelo gerado, por questão de escopo do trabalho.
@@ -333,18 +343,20 @@ De qualquer forma, a experiência adquirida ao treinar um modelo de forma distri
 Sobre a infraestrutura, ela permitiu que o trabalho fosse realizado. As consultas, via de regra, demoravam pouco tempo para responder (menos de 1 minuto cada). Pontos positivos de realizar o trabalho na \emph{Google Cloud} utilizando Python:
 
 \begin{itemize}
-    \item Fácil deploy de infraestrutura;
+    \item Fácil \emph{deploy} de infraestrutura;
     \item Fácil utilização do ambiente (conexão com Jupyter, execução de scripts).
 \end{itemize}
 
-Obviamente que não há só pontos positivos. Devido ao costume de trabalhar com determinadas bibliotecas de Machine Learning com Python, trabalhar com a PySpark pode ser um desafio. Isso porque, ela exige algumas restrições únicas, acredito que por ser montada sobre Scala. Para destacar alguns pontos:
+Obviamente que não há só pontos positivos. Devido ao costume de trabalhar com determinadas bibliotecas de \emph{Machine Learning} com Python, trabalhar com a PySpark pode ser um desafio. Isso porque, ela exige algumas restrições únicas, acredito que por ser montada sobre Scala. Para destacar alguns pontos:
 
 \begin{itemize}
     \item Não trabalha com Strings;
     \item Features precisam estar em uma única coluna do Dataframe.
 \end{itemize}
 
-A solução em núvem, em geral, é adequada ao processamento de dados desse nível de volume. É um volume mediano de dados (em torno de 5GB) e por isso, não houve dificuldades de performance. Ao comparar a facilidade de uso do ambiente da Google em relação ao da Amazon (usado no primeiro trabalho), a diferença é muito grande. Na Amazon, houveram problemas de liberação de portas, instalação de pacotes, configuração do Hadoop e Spark, coisas que foram praticamente inexistentes ao fazer o trabalho na Google Cloud. Obviamente que na Amazon há imagens pagas e que talvez facilitem o trabalho a ser realizado, mas a experiência melhor durante os trabalhos, foi com a Google.
+Fazendo um comparativo de Python com R, concluiu-se que Python foi bem mais fácil de utilizar. As consultas no Dataframe Spark eram mais simples (SQL puro), e foi possível até mesmo treinar o modelo (o que não foi possível no trabalho anterior, utilizando R). O próprio Spark em geral se comportou melhor, não foi necessário nenhuma reinicialização de ambiente, algo que era frequente utilizando R (os Datanodes iam para um estado inválido).
+
+A solução em núvem, em geral, é adequada ao processamento de dados desse nível de volume. É um volume mediano de dados (em torno de 5GB) e por isso, não houve dificuldades de performance. Ao comparar a facilidade de uso do ambiente da \emph{Google} em relação ao da \emph{Amazon} (usado no primeiro trabalho), a diferença é muito grande. Na \emph{Amazon}, houveram problemas de liberação de portas, instalação de pacotes, configuração do Hadoop e Spark, coisas que foram praticamente inexistentes ao fazer o trabalho na \emph{Google Cloud}. Na \emph{Amazon}, possivelmente há imagens pagas e que talvez facilitem o trabalho a ser realizado, mas a experiência melhor durante os trabalhos, foi com a \emph{Google}.
 
 \newpage
 \section{Conclusão}
@@ -352,7 +364,7 @@ A solução em núvem, em geral, é adequada ao processamento de dados desse ní
 
 A experiência com múltiplas plataformas de Cloud é algo essencial para um curso de Big Data. Isso não deixou a desejar durante as disciplinas EBD09 e EBD13, consegui utilizar dois dos ambientes mais populares e adquirir uma certa familiaridade com eles. 
 
-Sobre o trabalho, inicialmente o objetivo era apenas fazer análises exploratórias (pois nunca havia feito o deploy de Python na Google). Todavia, devido a facilidades de ambiente e obviamente ao prazo do trabalho, consegui evoluir até a montagem de um modelo de ML (mesmo performando mal, todo o processo de geração dele foi coberto).
+Sobre o trabalho, inicialmente o objetivo era apenas fazer análises exploratórias (pois nunca havia feito o \emph{deploy} de Python na \emph{Google}). Todavia, devido a facilidades de ambiente e obviamente ao prazo do trabalho, consegui evoluir até a montagem de um modelo de ML (mesmo performando mal, todo o processo de geração dele foi coberto).
 
 Acredito que tenha cumprido todos os pontos do escopo do trabalho. Como atividades futuras, pode-se melhorar o modelo gerado, seguindo abordagens citadas nesse próprio trabalho.
 
