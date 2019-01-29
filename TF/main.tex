@@ -44,20 +44,30 @@
 
 \maketitle % Print the title
 
-\section{Introdução}
-O objetivo do trabalho é analisar o Dataset do ENEM, assim como foi realizado o trabalho de EBD09. Todavia, agora usaremos Python e PySpark, fazendo o deploy de todo o ambiente na Google Cloud.
+\section{Introdução e Objetivos}
+Devido ao escopo flexível do trabalho, ele será executado em Python, na \emph{Google Cloud}. O trabalho de EBD09 foi executado em R neste mesmo ambiente, e o Exercício 1 de EBD13 foi executado na \emph{Amazon} em Python, portanto, ao final desse trabalho será possível fazer uma comparação entre deploy do ambiente Python nessas Clouds, além de destacar pontos positivos e negativos das linguagens citadas trabalhando com o Spark.
 
-O objetivo é analisar o Dataset, além de comparar as facilidades e dificuldades de utilizar Python e R. Além disso, se houver tempo hábil, irei realizar também uma análise de desempenho simplificada, para determinar um mínimo local de arquitetura (número de workers) para executar as análises.
+O principal objetivo do trabalho é chegar no mesmo ponto do trabalho de EBD09, ou seja, realizar algumas análises exploratórias plotando gráficos. Se for possível, é desejado chegar até a geração de um modelo, mesmo que pouco performático, de \emph{Machine Learning}.
 
-
-\subsection{Objetivo do Trabaho}
+Além disso, antes de começar, será realizada uma análise simplificada de arquiteturas para definirmos a melhor a ser utilizada. Essa análise visa a escolha do melhor ambiente disponível para que o trabalho seja realizado.
 
 \subsection{Organização do Texto}
+O texto das próximas seções está organizado da seguinte forma:
+
+\begin{itemize}
+    \item A Seção \ref{sect:data} disserta sobre os dados utilizados;
+    \item A Seção \ref{sect:infra} fala sobre a Infraestrutura e Deploy de ambiente;
+    \item A Seção \ref{sect:expl_anal} faz a análise dos dados;
+    \item A Seção \ref{sect:critic_anal} faz uma análise crítica e comparações de ferramentas e linguagens;
+    \item A Seção \ref{sect:end} conclui o trabalho;
+    \item A Seção \ref{sect:eval_data} possui informações complementares.
+\end{itemize}
 
 \newpage
-\section{Dados}
+\section{Descrição do Dataset}
+\label{sect:data}
 
-Os dados utilizados foram os mesmos do trabalho de EBD09. Não irei entrar em detalhes de quantas \emph{features} existem nele, vamos fazer uma avaliação a medida que formos avançando na avaliação exploratória. Algumas características dos dados podem ser observadas na Tabela \ref{tab:data_data}.
+Os dados utilizados foram os mesmos do trabalho de EBD09. As \emph{Features} do dataset não serão detalhadas, vamos ir detalhando apenas aquelas utilizadas na análise exploratória. Algumas características dos dados podem ser observadas na Tabela \ref{tab:data_data}.
 
 \begin{table}[H]
 \centering
@@ -80,12 +90,13 @@ Para realizar todas as tarefas, foi submetido o dataset para o HDFS. O caminho c
 
 \newpage
 \section{Infraestrutura e Deploy de Ambiente}
+\label{sect:infra}
 
-Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} do Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial de todo o ambiente. A configuração dessas máquinas não necessariamente é importante pois só iremos setar o ambiente e testá-lo.
+Como base da infraestrutura, utilizou-se a parte de \emph{Data Proc} da Google Cloud. Inicialmente, criou-se um cluster com 1 \emph{master} e 2 \emph{slaves} apenas para a realização de um deploy inicial. A configuração dessas máquinas não necessariamente é importante pois só iremos setar e testar o ambiente.
 
 \subsection{Deploy de Ambiente}
 
-Para fazer a avaliação da arquitetura, foram realizados testes de deploy do ambiente (nunca havia feito a implantação do ambiente com Jupyter na \emph{Google Cloud}).Felizmente a implantação das aplicações necessárias precisa apenas de uma ação: colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
+Para fazer a avaliação da arquitetura, foram realizados testes de deploy do ambiente (era necessário conhecer como ele era realizado para replicar nas análises de infraestrutura). Felizmente a implantação das aplicações necessárias precisa apenas de uma ação: colocar o script \emph{gs://dataproc-initialization-actions/jupyter/jupyter.sh} como ação de inicialização.
 
 Com isso, o ambiente montado já vem com Hadoop, Spark, PySpark, Jupyter e Anaconda, todos configurados. O último vem com um problema de configuração que não permite que sejam instalados novos pacotes. Isso foi resolvido executando o comando abaixo. Após esse comando, foi possível instalar pacotes normalmente (embora eu tenha dúvidas se essa é a melhor abordagem para a solução).
 
@@ -199,6 +210,7 @@ Para ficar mais claro a arquitetura utilizada a Figura \ref{fig:arch} mostra sua
 
 \newpage
 \section{Análise Exploratória dos Dados}
+\label{sect:expl_anal}
 
 A análise dos dados tem como principal objetivo identificar \emph{Features} que tenham relação com as notas dos candidatos. Para isso, irei realizando inferências a medida que a análise avançar, exibindo os resultados obtidos.
 
@@ -259,7 +271,90 @@ Ao analisar mais um campo, o de Raça, identificamos que há dois valores que n�
 \end{figure}
 
 
+\subsection{Modelo de Regressão}
 
+Com algumas Features selecionadas, foi decidido por tentar realizar o treinamento de um modelo de \emph{Machine Learning} para tentar prever as notas de novos candidatos. Para isso, foi selecionado o modelo mais simples de regressão (Linear), utilizando o LinearRegression do PySpark.
+
+Há algumas particularidades do PySpark, relacionando-o com as bibliotecas geralmente utilizadas para machine learning em Python, por exemplo, o fato de todas as features precisarem estar em apenas uma coluna e não trabalhar valores String. Por isso, foi necessário uma série de transformações nos dados antes de começar a treinar o modelo.
+
+Inicialmente, transformou-se os dados representados em strings para vetores de inteiros, com o código abaixo.
+Isso foi executado no campo \emph{UF} e no campo \emph{Renda}.
+
+\begin{lstlisting}[caption= {Transformação de dados String.},captionpos=b, language=python]
+tokenizer = Tokenizer(inputCol='UF', outputCol="uf_text")
+df_text_token = tokenizer.transform(ml_df)
+
+hashingTF = HashingTF(inputCol="uf_text", outputCol="uf_feature",
+numFeatures=20)
+ml_df = hashingTF.transform(df_text_token)
+\end{lstlisting}
+
+Com isso, separou-se os dados em um dataset de treino (70\% dos dados) e teste (30\% dos dados) e realizou-se o treinamento de um regressor linear (código abaixo). O resultado não foi muito bom, as estatísticas dele podem ser visualizadas na Tabela \ref{tab:model_traign}.
+
+
+\begin{lstlisting}[caption= {Treinamento de modelo de Regressão Linear.},captionpos=b, language=python]
+splits = vhouse_df.randomSplit([0.7, 0.3])
+train_df = splits[0]
+test_df = splits[1]
+
+lr = LinearRegression(featuresCol = 'features', labelCol='Score',
+maxIter=10, regParam=0.3, elasticNetParam=0.8)
+lr_model = lr.fit(train_df)
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Dataset & Estatística & Valor \\ \hline \hline
+Treino & R Squared & 0.21\\ \hline
+Teste & R Squared & 0.21 \\ \hline
+\end{tabular}
+\caption{R Squared do modelo com os Datasets de treino e teste.}
+\label{tab:model_traign}
+\end{table}
+
+O modelo nitidamente não está bom, o valor de R Squared em 0.21 indica que o modelo consegue prever apenas 21\% da variabilidade em \emph{Score} pode ser explicada usando o modelo. Para melhorar isso, pode-se realizar diversas ações:
+
+\begin{itemize}
+    \item Aumentar o conjunto de features;
+    \item Mudar o formato de representação de features para se adequarem melhor aos modelos de ML;
+    \item Mudar o algoritmo de ML;
+    \item Tunar parâmetros do algoritmo de ML;
+    \item Realizar uma análise de correlação das features, utilizando um conjunto com base não só na análise visual.
+\end{itemize}
+
+De qualquer forma, a experiência adquirida ao treinar um modelo de forma distribuída com o PySpark foi ótima. Optou-se por não realizar a otimização do modelo gerado, por questão de escopo do trabalho.
+
+\newpage
+\section{Análise Crítica}
+\label{sect:critic_anal}
+
+Sobre a infraestrutura, ela permitiu que o trabalho fosse realizado. As consultas, via de regra, demoravam pouco tempo para responder (menos de 1 minuto cada). Pontos positivos de realizar o trabalho na \emph{Google Cloud} utilizando Python:
+
+\begin{itemize}
+    \item Fácil deploy de infraestrutura;
+    \item Fácil utilização do ambiente (conexão com Jupyter, execução de scripts).
+\end{itemize}
+
+Obviamente que não há só pontos positivos. Devido ao costume de trabalhar com determinadas bibliotecas de Machine Learning com Python, trabalhar com a PySpark pode ser um desafio. Isso porque, ela exige algumas restrições únicas, acredito que por ser montada sobre Scala. Para destacar alguns pontos:
+
+\begin{itemize}
+    \item Não trabalha com Strings;
+    \item Features precisam estar em uma única coluna do Dataframe.
+\end{itemize}
+
+A solução em núvem, em geral, é adequada ao processamento de dados desse nível de volume. É um volume mediano de dados (em torno de 5GB) e por isso, não houve dificuldades de performance. Ao comparar a facilidade de uso do ambiente da Google em relação ao da Amazon (usado no primeiro trabalho), a diferença é muito grande. Na Amazon, houveram problemas de liberação de portas, instalação de pacotes, configuração do Hadoop e Spark, coisas que foram praticamente inexistentes ao fazer o trabalho na Google Cloud. Obviamente que na Amazon há imagens pagas e que talvez facilitem o trabalho a ser realizado, mas a experiência melhor durante os trabalhos, foi com a Google.
+
+\newpage
+\section{Conclusão}
+\label{sect:end}
+
+A experiência com múltiplas plataformas de Cloud é algo essencial para um curso de Big Data. Isso não deixou a desejar durante as disciplinas EBD09 e EBD13, consegui utilizar dois dos ambientes mais populares e adquirir uma certa familiaridade com eles. 
+
+Sobre o trabalho, inicialmente o objetivo era apenas fazer análises exploratórias (pois nunca havia feito o deploy de Python na Google). Todavia, devido a facilidades de ambiente e obviamente ao prazo do trabalho, consegui evoluir até a montagem de um modelo de ML (mesmo performando mal, todo o processo de geração dele foi coberto).
+
+Acredito que tenha cumprido todos os pontos do escopo do trabalho. Como atividades futuras, pode-se melhorar o modelo gerado, seguindo abordagens citadas nesse próprio trabalho.
 
 
 \newpage
